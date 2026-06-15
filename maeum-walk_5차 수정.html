@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마음 산책 — 우울 척도 검사</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-lightest: #e1f5ee;
+    --green-light: #9FE1CB;
+    --green-mid: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-darkest: #085041;
+    --amber-light: #faeeda;
+    --amber-mid: #EF9F27;
+    --amber-dark: #633806;
+    --coral-light: #faece7;
+    --coral-mid: #D85A30;
+    --coral-dark: #4A1B0C;
+    --text: #1a1a1a;
+    --text-muted: #555;
+    --text-hint: #888;
+    --bg: #f7fbf9;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-pill: 999px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ───── MAIN ───── */
+  #screen-main {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #e8f5e9 0%, #d4efea 50%, #dceefb 100%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    text-align: center;
+  }
+  #screen-main.active { display: flex; }
+
+  .main-icon {
+    font-size: 64px; margin-bottom: 1.5rem;
+    animation: sway 3s ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%,100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+
+  .main-title {
+    font-size: 36px; font-weight: 700; color: var(--green-darkest);
+    letter-spacing: -0.5px; margin-bottom: 0.4rem;
+  }
+  .main-tagline {
+    font-size: 17px; color: var(--green-dark); margin-bottom: 1rem;
+  }
+  .main-desc {
+    font-size: 14px; color: var(--green-dark); opacity: 0.8;
+    line-height: 1.8; max-width: 340px; margin: 0 auto 2.5rem;
+  }
+
+  .btn-primary {
+    background: var(--green-mid); color: #fff; border: none;
+    border-radius: var(--radius-pill); padding: 16px 48px;
+    font-size: 17px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    font-family: inherit; box-shadow: 0 4px 20px rgba(29,158,117,0.3);
+  }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .main-meta {
+    margin-top: 2rem; font-size: 12px; color: var(--green-dark);
+    opacity: 0.65; line-height: 1.8;
+  }
+
+  /* ───── SURVEY ───── */
+  #screen-survey {
+    min-height: 100vh;
+    background: var(--bg);
+    padding: 0;
+  }
+
+  .survey-topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem 0;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .topbar-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .topbar-title { font-size: 15px; font-weight: 600; color: var(--green-darkest); }
+  .topbar-count { font-size: 13px; color: var(--text-muted); }
+
+  .progress-track {
+    height: 4px; background: #e0e0e0; border-radius: 999px;
+    overflow: hidden; margin-bottom: -1px;
+  }
+  .progress-fill {
+    height: 100%; background: var(--green-mid);
+    border-radius: 999px; transition: width 0.4s ease;
+  }
+
+  .survey-body {
+    padding: 2rem 1.5rem;
+    max-width: 600px; margin: 0 auto;
+  }
+
+  .q-label { font-size: 12px; color: var(--green-mid); font-weight: 600; margin-bottom: 0.5rem; letter-spacing: 0.5px; }
+  .q-context { font-size: 13px; color: var(--text-hint); margin-bottom: 0.75rem; }
+  .q-text {
+    font-size: 18px; font-weight: 600; color: var(--text);
+    line-height: 1.5; margin-bottom: 2rem;
+  }
+
+  .options-wrap { display: grid; gap: 10px; }
+  .option-btn {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); cursor: pointer;
+    transition: all 0.15s; font-family: inherit; text-align: left;
+    width: 100%;
+  }
+  .option-btn:hover { border-color: var(--green-mid); background: var(--green-lightest); }
+  .option-btn.selected {
+    border-color: var(--green-mid); background: var(--green-lightest);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.15);
+  }
+  .opt-dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--border); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .option-btn.selected .opt-dot {
+    background: var(--green-mid); border-color: var(--green-mid);
+  }
+  .opt-dot-inner { width: 8px; height: 8px; border-radius: 50%; background: #fff; display: none; }
+  .option-btn.selected .opt-dot-inner { display: block; }
+  .opt-text { flex: 1; }
+  .opt-days { font-size: 13px; font-weight: 600; color: var(--text); display: block; }
+  .opt-desc { font-size: 12px; color: var(--text-muted); }
+
+  .nav-row {
+    display: flex; gap: 12px; margin-top: 2.5rem; padding-bottom: 3rem;
+  }
+  .btn-back {
+    flex: 1; padding: 14px; border: 1.5px solid var(--border);
+    background: var(--surface); border-radius: var(--radius);
+    font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit;
+    color: var(--text-muted); transition: all 0.15s;
+  }
+  .btn-back:hover { border-color: var(--green-mid); color: var(--green-dark); }
+  .btn-back:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-next {
+    flex: 2; padding: 14px; background: var(--green-mid);
+    color: #fff; border: none; border-radius: var(--radius);
+    font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-next:hover { background: var(--green-dark); }
+
+  /* ───── RESULT ───── */
+  #screen-result { background: var(--bg); min-height: 100vh; }
+
+  .result-hero {
+    padding: 3rem 1.5rem 2rem;
+    text-align: center;
+  }
+  .result-score {
+    font-size: 72px; font-weight: 700; line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .result-total { font-size: 16px; color: var(--text-muted); margin-bottom: 0.75rem; }
+  .result-level-badge {
+    display: inline-block; border-radius: var(--radius-pill);
+    padding: 6px 20px; font-size: 15px; font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .result-desc { font-size: 14px; color: var(--text-muted); line-height: 1.8; max-width: 360px; margin: 0 auto; }
+
+  .result-body { max-width: 600px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  .scale-section { margin-bottom: 2rem; }
+  .section-label { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 1rem; }
+
+  .scale-bar-wrap { position: relative; margin-bottom: 0.5rem; }
+  .scale-track-bar {
+    display: flex; height: 12px; border-radius: 999px; overflow: hidden;
+  }
+  .scale-seg-green { flex: 15; background: #5DCAA5; }
+  .scale-seg-amber { flex: 5; background: #FAC775; }
+  .scale-seg-orange { flex: 4; background: #E07040; }
+  .scale-seg-coral { flex: 36; background: #B02020; }
+
+  /* INTRO */
+  #screen-intro {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #e8f5e9 0%, #d4efea 50%, #dceefb 100%);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 3rem 1.5rem; text-align: center;
+  }
+  #screen-intro.active { display: flex; }
+  .intro-title { font-size: 22px; font-weight: 700; color: var(--green-darkest); margin-bottom: 1.5rem; }
+  .intro-box {
+    background: rgba(255,255,255,0.88); border-radius: var(--radius);
+    padding: 1.5rem; max-width: 400px; width: 100%; margin-bottom: 2rem;
+    border: 1px solid rgba(29,158,117,0.2); text-align: left;
+  }
+  .intro-box-title { font-size: 14px; font-weight: 700; color: var(--green-darkest); margin-bottom: 1rem; }
+  .intro-item { display: flex; gap: 10px; margin-bottom: 0.9rem; font-size: 14px; color: var(--text); line-height: 1.7; }
+  .intro-num { font-size: 13px; font-weight: 700; color: var(--green-mid); flex-shrink: 0; margin-top: 2px; }
+  .scale-pointer-row { position: relative; height: 24px; margin-top: -4px; }
+  .scale-pointer {
+    position: absolute; top: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--surface); border: 3px solid var(--green-mid);
+    transform: translateX(-50%); transition: left 0.8s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 0.4rem; }
+
+  .activity-section { margin-bottom: 2rem; }
+  .section-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+  .section-title span { font-size: 18px; }
+
+  .activity-list { display: flex; flex-direction: column; gap: 12px; }
+  .activity-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .activity-emoji { font-size: 28px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+  .activity-info { flex: 1; }
+  .activity-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .activity-effect { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 8px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 11px; padding: 3px 10px; border-radius: var(--radius-pill);
+    font-weight: 500;
+  }
+  .tag-effect { background: var(--green-lightest); color: var(--green-darkest); }
+  .tag-ref { background: #f0f0f0; color: var(--text-muted); }
+
+  .note-box {
+    background: #fffbf0; border: 1px solid #fde68a; border-radius: var(--radius);
+    padding: 1.25rem; font-size: 13px; color: #78350f; line-height: 1.8;
+    margin-bottom: 2rem;
+  }
+  .note-box.danger {
+    background: #fff1f0; border-color: #fca5a5; color: #7f1d1d;
+  }
+  .note-box strong { font-weight: 600; }
+
+  .btn-retry {
+    width: 100%; padding: 16px; background: var(--green-mid);
+    color: #fff; border: none; border-radius: var(--radius);
+    font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-retry:hover { background: var(--green-dark); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1a1a1a; color: #fff; padding: 10px 20px;
+    border-radius: var(--radius-pill); font-size: 14px;
+    opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 480px) {
+    .main-title { font-size: 28px; }
+    .q-text { font-size: 16px; }
+    .result-score { font-size: 56px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── MAIN ── -->
+<div class="screen" id="screen-main">
+  <div class="main-icon">🌿</div>
+  <div class="main-title">마음 산책</div>
+  <div class="main-tagline">오늘 나의 마음은 어떤가요?</div>
+  <div class="main-desc">
+    CES-D 우울 척도 검사를 통해<br>
+    나의 마음 상태를 확인하고<br>
+    도움이 되는 활동을 추천받아 보세요.
+  </div>
+  <button class="btn-primary" onclick="goIntro()">🌱 검사 시작하기</button>
+  <div class="main-meta">
+    총 20문항 · 약 3–5분 소요<br>
+    본 검사는 의학적 진단을 대체하지 않습니다.
+  </div>
+</div>
+
+<!-- ── INTRO ── -->
+<div class="screen" id="screen-intro">
+  <div class="intro-title">🌿 검사 전 안내</div>
+  <div class="intro-box">
+    <div class="intro-box-title">📋 응답 방법</div>
+    <div class="intro-item">
+      <span class="intro-num">1</span>
+      <span>문항을 너무 오래 고민하지 말고 즉각적으로 솔직하게 응답하시면 됩니다.</span>
+    </div>
+    <div class="intro-item">
+      <span class="intro-num">2</span>
+      <span>지난 1주 동안 본인이 느끼고 행동한 것을 가장 잘 나타낸다고 생각되는 문항의 칸에 체크해주시면 됩니다.</span>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="goSurvey()">검사 시작하기 →</button>
+</div>
+
+<!-- ── SURVEY ── -->
+<div class="screen" id="screen-survey">
+  <div class="survey-topbar">
+    <div class="topbar-row">
+      <div class="topbar-title">🌿 마음 산책</div>
+      <div class="topbar-count" id="progressLabel">1 / 20</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressBar" style="width:5%"></div>
+    </div>
+  </div>
+  <div class="survey-body">
+    <div id="questionArea"></div>
+    <div class="nav-row">
+      <button class="btn-back" id="btnPrev" onclick="prevQ()">← 이전</button>
+      <button class="btn-next" id="btnNext" onclick="nextQ()">다음 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESULT ── -->
+<div class="screen" id="screen-result">
+  <div class="result-hero" id="resultHero"></div>
+  <div class="result-body">
+    <div class="scale-section">
+      <div class="section-label">내 점수 위치</div>
+      <div id="scaleBar"></div>
+    </div>
+    <div class="activity-section">
+      <div class="section-title"><span>✨</span> 추천 활동</div>
+      <div class="activity-list" id="activityList"></div>
+    </div>
+    <div class="activity-section" id="helpSection" style="display:none">
+      <div class="section-title" style="color:#B02020"><span>🆘</span> 도움받을 수 있는 방법</div>
+      <div class="activity-list" id="helpList"></div>
+    </div>
+    <div class="note-box" id="noteBox"></div>
+    <button class="btn-retry" onclick="resetApp()">🔄 다시 검사하기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const questions = [
+  { text: "평소에는 아무렇지도 않던 일들이 귀찮게 느껴졌다.", reverse: false },
+  { text: "먹고 싶지 않았다; 식욕이 없었다.", reverse: false },
+  { text: "가족이나 친구가 도와주더라도 울적한 기분을 떨쳐 버릴 수 없었다.", reverse: false },
+  { text: "다른 사람들만큼 능력이 있다고 느꼈다.", reverse: true },
+  { text: "무슨 일을 하든 정신을 집중하기가 힘들었다.", reverse: false },
+  { text: "우울했다.", reverse: false },
+  { text: "하는 일마다 힘들게 느껴졌다.", reverse: false },
+  { text: "앞일이 희망차게 느껴졌다.", reverse: true },
+  { text: "내 인생은 실패작이라는 생각이 들었다.", reverse: false },
+  { text: "두려움을 느꼈다.", reverse: false },
+  { text: "잠을 설쳤다; 잠을 잘 이루지 못했다.", reverse: false },
+  { text: "행복했다.", reverse: true },
+  { text: "평소보다 말을 적게 했다; 말수가 줄었다.", reverse: false },
+  { text: "세상에 홀로 있는 듯한 외로움을 느꼈다.", reverse: false },
+  { text: "사람들이 불친절하다고 느꼈다.", reverse: false },
+  { text: "생활이 즐거웠다.", reverse: true },
+  { text: "갑자기 울음이 나왔다.", reverse: false },
+  { text: "슬픔을 느꼈다.", reverse: false },
+  { text: "사람들이 나를 싫어하는 것 같은 느낌이 들었다.", reverse: false },
+  { text: "도무지 무슨 일을 시작할 수 없었다.", reverse: false },
+];
+
+const options = [
+  { score: 0, days: "0일", desc: "거의 없었다" },
+  { score: 1, days: "1–2일", desc: "가끔 있었다" },
+  { score: 2, days: "3–4일", desc: "상당히 있었다" },
+  { score: 3, days: "5–7일", desc: "거의 매일 있었다" },
+];
+
+const levels = [
+  {
+    min: 0, max: 15,
+    label: "정상", scoreColor: "#1D9E75", badgeBg: "#e1f5ee", badgeColor: "#085041",
+    desc: "현재 마음 상태는 비교적 안정적인 편입니다. 일상 속 작은 즐거움을 유지하는 활동들이 마음 건강을 더욱 튼튼하게 해줄 거예요.",
+    activities: [
+      { emoji: "🚶", name: "자연 속 산책", effect: "자연 환경에서의 90분 걷기는 반추적 사고(부정적 자기 집중 사고)를 유의하게 줄이고, 우울 위험과 관련된 뇌 영역(sgPFC)의 활동을 감소시켰습니다.", badge: "반추적 사고 감소", ref: "Bratman et al., PNAS, 2015" },
+      { emoji: "📖", name: "독서", effect: "6분간의 독서가 심박수와 근육 긴장도로 측정한 스트레스를 68% 감소시켰습니다. 단, 이는 학술지 논문이 아닌 산업 연구 보고서 기반 결과입니다.", badge: "스트레스 완화", ref: "Lewis, Mindlab International, Univ. of Sussex, 2009" },
+      { emoji: "👥", name: "사회적 교류", effect: "사회적 고립과 외로움은 조기 사망 위험을 각각 29%, 26% 높인다는 메타분석 결과가 있습니다. 사회적 연결 유지는 정신 건강 보호 요인으로 작용합니다.", badge: "정신건강 보호 요인", ref: "Holt-Lunstad et al., Perspectives on Psychological Science, 2015" },
+    ]
+  },
+  {
+    min: 16, max: 20,
+    label: "경미한 우울", scoreColor: "#EF9F27", badgeBg: "#faeeda", badgeColor: "#633806",
+    desc: "일상적인 스트레스나 피로가 쌓여 있을 수 있습니다. 의도적인 회복 활동으로 마음을 돌봐주세요.",
+    activities: [
+      { emoji: "🏃", name: "유산소 운동", effect: "운동의 우울 개선 효과는 항우울제(세르트랄린)와 전반적으로 유사한 수준으로 나타났습니다. 운동은 뇌유래신경영양인자(BDNF) 생성을 촉진해 뇌 가소성을 높입니다.", badge: "항우울제 수준 효과", ref: "Blumenthal et al., Psychosom Med., 2007" },
+      { emoji: "✏️", name: "감사 일기 쓰기", effect: "감사한 일을 주간 단위로 기록한 집단은 그렇지 않은 집단보다 낙관성, 삶의 만족도가 유의하게 높았으며, 긍정 정서가 가장 강건하게 향상된 결과 지표였습니다.", badge: "긍정 정서 향상", ref: "Emmons & McCullough, J Pers Soc Psychol., 2003" },
+      { emoji: "🌙", name: "수면 규칙화", effect: "일정한 수면 시간 유지는 우울 및 불안 증상을 완화하고 정서 조절 능력을 높입니다. 수면 부족 자체가 우울 증상을 악화시킵니다.", badge: "정서 조절", ref: "Walker, Why We Sleep. 2017" },
+      { emoji: "🎵", name: "음악 감상", effect: "음악 청취 시 정서적 절정 경험과 함께 선조체에서 도파민이 분비된다는 사실이 PET 스캔으로 확인되었습니다. 음악은 추상적 자극임에도 뇌의 보상 회로를 활성화합니다.", badge: "도파민 분비 확인", ref: "Salimpoor et al., Nature Neuroscience, 2011" },
+    ]
+  },
+  {
+    min: 21, max: 24,
+    label: "중한 우울", scoreColor: "#E07040", badgeBg: "#fde8d8", badgeColor: "#7A2E0A",
+    desc: "우울 증상이 일상생활에 영향을 미치고 있을 수 있습니다. 아래 활동들과 함께 전문가 상담을 받아보시길 권장드립니다.",
+    activities: [
+      { emoji: "🧘", name: "마음챙김 인지치료 (MBCT)", effect: "9개 무작위 대조군 연구를 종합한 메타분석에서, MBCT는 일반 치료 대비 우울 재발 위험을 43% 낮추었으며 특히 3회 이상 우울 삽화를 경험한 경우 효과적이었습니다.", badge: "재발 위험 감소", ref: "Kuyken et al., JAMA Psychiatry, 2016" },
+      { emoji: "🏋️", name: "규칙적 운동", effect: "운동의 우울 개선 효과는 항우울제와 유사한 수준이며, 운동을 지속한 집단은 재발률이 유의하게 낮았습니다(재발률 8% vs 약물군 38%).", badge: "항우울 효과·재발 예방", ref: "Blumenthal et al., Psychosom Med., 1999·2007" },
+      { emoji: "🤝", name: "지지 집단 참여", effect: "비슷한 경험을 공유하는 집단 참여는 고립감을 줄이고 사회적 지지를 높여 우울 완화에 효과적입니다. 대면·온라인 모두 효과가 있습니다.", badge: "사회적 지지 강화", ref: "Cuijpers et al., World Psychiatry. 2019" },
+      { emoji: "💬", name: "전문가 상담 (CBT)", effect: "인지행동치료(CBT)는 중등도 우울에 대한 국제 가이드라인 1차 권고 치료로, 약 50–60%의 반응률이 보고됩니다.", badge: "1차 권고 치료", ref: "APA, 2019; NICE Guidelines CG90" },
+    ]
+  },
+  {
+    min: 25, max: 60,
+    label: "심한 우울", scoreColor: "#B02020", badgeBg: "#fde8e8", badgeColor: "#7A0A0A",
+    desc: "우울 증상이 심각한 수준입니다. 반드시 정신건강 전문가의 도움을 받으시길 강력히 권장드립니다.",
+    activities: [
+      { emoji: "🌱", name: "일상 루틴 회복 (행동 활성화)", effect: "26개 무작위 대조군 연구 1,524명 메타분석에서 행동 활성화는 대조군 대비 우울 증상을 유의하게 개선했으며, CBT·항우울제와 유사한 효과 크기를 보였습니다. 기상·식사·짧은 외출 등 작은 루틴부터 회복하는 것이 핵심입니다.", badge: "CBT와 동등한 효과", ref: "Mazzucchelli et al., PLOS ONE, 2009; Sturmey, Psychiatric Services, 2009" },
+      { emoji: "🏋️", name: "규칙적 운동", effect: "운동의 우울 개선 효과는 항우울제와 유사한 수준이며, 운동을 지속한 집단은 재발률이 유의하게 낮았습니다(재발률 8% vs 약물군 38%).", badge: "항우울 효과·재발 예방", ref: "Blumenthal et al., Psychosom Med., 1999·2007" },
+      { emoji: "🌙", name: "수면 규칙화", effect: "일정한 수면 시간 유지는 우울 및 불안 증상을 완화하고 정서 조절 능력을 높입니다. 수면 부족 자체가 우울 증상을 악화시킵니다.", badge: "정서 조절", ref: "Walker, Why We Sleep, 2017" },
+    ],
+    helpItems: [
+      { emoji: "🏥", name: "정신건강의학과 전문 상담", effect: "심한 우울에 대해 정신건강의학과 전문의의 진단과 치료(약물치료·심리치료 병행)는 국제 가이드라인에서 1차 권고로 명시되어 있습니다.", badge: "1차 권고 치료", ref: "APA, 2019; NICE Guidelines CG90" },
+      { emoji: "📞", name: "위기 상담 연계 (109)", effect: "즉각적인 정서적 위기 상황에서 훈련된 전문 상담사와의 전화 상담은 자살 위험 감소 및 즉각적 심리 안정에 효과적입니다. 정신건강상담전화 109는 24시간 무료로 운영됩니다.", badge: "즉각적 위기 개입", ref: "보건복지부 정신건강사업 안내, 2023" },
+    ]
+  },
+];
+
+let answers = new Array(20).fill(null);
+let currentQ = 0;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goIntro() {
+  showScreen('screen-intro');
+}
+
+function goSurvey() {
+  showScreen('screen-survey');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const total = questions.length;
+  const pct = ((currentQ + 1) / total * 100).toFixed(0);
+
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${currentQ + 1} / ${total}`;
+
+  let html = `
+    <div class="q-label">문항 ${currentQ + 1} / ${total}</div>
+    <div class="q-context">지난 일주일 동안 얼마나 자주 느꼈나요?</div>
+    <div class="q-text">"${q.text}"</div>
+    <div class="options-wrap">
+  `;
+
+  options.forEach(opt => {
+    const sel = answers[currentQ] === opt.score ? ' selected' : '';
+    html += `
+      <button class="option-btn${sel}" onclick="selectAnswer(${opt.score})">
+        <div class="opt-dot"><div class="opt-dot-inner"></div></div>
+        <div class="opt-text">
+          <span class="opt-days">${opt.days}</span>
+          <span class="opt-desc">${opt.desc}</span>
+        </div>
+      </button>
+    `;
+  });
+
+  html += `</div>`;
+  document.getElementById('questionArea').innerHTML = html;
+
+  document.getElementById('btnPrev').disabled = currentQ === 0;
+  const isLast = currentQ === total - 1;
+  document.getElementById('btnNext').textContent = isLast ? '결과 보기 →' : '다음 →';
+}
+
+function selectAnswer(score) {
+  answers[currentQ] = score;
+  renderQuestion();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function nextQ() {
+  if (answers[currentQ] === null) { showToast('이 문항에 답해주세요!'); return; }
+  if (currentQ < questions.length - 1) { currentQ++; renderQuestion(); }
+  else showResult();
+}
+
+function prevQ() {
+  if (currentQ > 0) { currentQ--; renderQuestion(); }
+}
+
+function calcScore() {
+  return answers.reduce((sum, val, i) => {
+    if (val === null) return sum;
+    return sum + (questions[i].reverse ? (3 - val) : val);
+  }, 0);
+}
+
+function showResult() {
+  const unanswered = answers.findIndex(a => a === null);
+  if (unanswered !== -1) {
+    currentQ = unanswered;
+    renderQuestion();
+    showToast(`${unanswered + 1}번 문항에 아직 답하지 않았어요.`);
+    return;
+  }
+
+  const score = calcScore();
+  const level = levels.find(l => score >= l.min && score <= l.max) || levels[2];
+
+  showScreen('screen-result');
+
+  document.getElementById('resultHero').innerHTML = `
+    <div class="result-score" style="color:${level.scoreColor}">${score}</div>
+    <div class="result-total">/ 60점</div>
+    <div class="result-level-badge" style="background:${level.badgeBg};color:${level.badgeColor}">${level.label}</div>
+    <div class="result-desc">${level.desc}</div>
+  `;
+
+  const pct = Math.min((score / 60) * 100, 100).toFixed(1);
+  document.getElementById('scaleBar').innerHTML = `
+    <div class="scale-bar-wrap">
+      <div class="scale-track-bar">
+        <div class="scale-seg-green"></div>
+        <div class="scale-seg-amber"></div>
+        <div class="scale-seg-orange"></div>
+        <div class="scale-seg-coral"></div>
+      </div>
+      <div class="scale-pointer-row">
+        <div class="scale-pointer" id="scalePointer" style="left:0%"></div>
+      </div>
+    </div>
+    <div style="position:relative;height:36px;margin-top:0.5rem;font-size:11px;color:var(--text-muted);">
+      <span style="position:absolute;left:0%">0<br>정상</span>
+      <span style="position:absolute;left:25%">16<br>경미한</span>
+      <span style="position:absolute;left:33.3%">21<br>중한</span>
+      <span style="position:absolute;left:40%">25<br>심한</span>
+      <span style="position:absolute;right:0%">60</span>
+    </div>
+  `;
+  setTimeout(() => {
+    document.getElementById('scalePointer').style.left = pct + '%';
+  }, 100);
+
+  document.getElementById('activityList').innerHTML = level.activities.map(a => `
+    <div class="activity-card">
+      <div class="activity-emoji">${a.emoji}</div>
+      <div class="activity-info">
+        <div class="activity-name">${a.name}</div>
+        <div class="activity-effect">${a.effect}</div>
+        <div class="tag-row">
+          <span class="tag tag-effect">${a.badge}</span>
+          <span class="tag tag-ref">📄 ${a.ref}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const helpSection = document.getElementById('helpSection');
+  const helpList = document.getElementById('helpList');
+  if (level.helpItems && level.helpItems.length > 0) {
+    helpList.innerHTML = level.helpItems.map(a => `
+      <div class="activity-card" style="border-color:rgba(176,32,32,0.2);background:#fff8f8">
+        <div class="activity-emoji">${a.emoji}</div>
+        <div class="activity-info">
+          <div class="activity-name">${a.name}</div>
+          <div class="activity-effect">${a.effect}</div>
+          <div class="tag-row">
+            <span class="tag tag-effect" style="background:#fde8e8;color:#7A0A0A">${a.badge}</span>
+            <span class="tag tag-ref">📄 ${a.ref}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    helpSection.style.display = 'block';
+  } else {
+    helpSection.style.display = 'none';
+  }
+
+  const isSevere = score >= 25;
+  const isMild = score >= 16;
+  document.getElementById('noteBox').className = 'note-box' + (isSevere ? ' danger' : '');
+  document.getElementById('noteBox').innerHTML = isSevere
+    ? `<strong>🚨 즉각적인 도움이 필요할 수 있습니다</strong><br><br>
+       검사 결과 심한 우울 증상이 나타났습니다. 혼자 감당하지 않아도 됩니다. 지금 바로 아래 기관에 연락해주세요.<br><br>
+       📞 <strong>정신건강상담전화: 109</strong> (24시간, 무료)<br>
+       📞 <strong>자살예방상담전화: 1393</strong> (24시간, 무료)<br>
+       📞 <strong>정신건강 위기상담: 1577-0199</strong> (24시간)<br><br>
+       <hr style="border:none;border-top:1px solid rgba(176,32,32,0.2);margin:0.75rem 0">
+       <span style="font-size:12px">본 검사는 선별 도구일 뿐이며, 정확한 의학적 진단은 정신건강의학과 전문의의 상담이 필요합니다.</span>`
+    : `<strong>📌 안내</strong><br>본 검사는 선별 도구일 뿐이며, 정확한 의학적 진단은 정신건강의학과 전문의의 상담이 필요합니다.${isMild ? '<br><br>우울 증상이 지속된다면 전문가 상담을 받아보시길 권장드립니다. 📞 정신건강상담전화: <strong>109</strong> (24시간, 무료)' : ''}`;
+}
+
+function resetApp() {
+  answers = new Array(20).fill(null);
+  currentQ = 0;
+  showScreen('screen-main');
+}
+
+// 시작 시 메인 화면 표시
+showScreen('screen-main');
+</script>
+</body>
+</html>
